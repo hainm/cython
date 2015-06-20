@@ -88,6 +88,13 @@ the necessary include files, e.g. for NumPy::
 
     include_path = [numpy.get_include()]
 
+Note for Numpy users.  Despite this, you will still get warnings like the
+following from the compiler, because Cython is using a deprecated Numpy API::
+
+   .../include/numpy/npy_1_7_deprecated_api.h:15:2: warning: #warning "Using deprecated NumPy API, disable it by " "#defining NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION" [-Wcpp]
+
+For the time being, it is just a warning that you can ignore.
+
 If you need to specify compiler options, libraries to link with or other
 linker options you will need to create ``Extension`` instances manually
 (note that glob syntax can still be used to specify multiple extensions
@@ -331,13 +338,13 @@ Cython code.  Here is the list of currently supported directives:
     the operands have opposite signs) and raise a
     ``ZeroDivisionError`` when the right operand is 0. This has up to
     a 35% speed penalty. If set to True, no checks are performed.  See
-    `CEP 516 <http://wiki.cython.org/enhancements/division>`_.  Default
+    `CEP 516 <https://github.com/cython/cython/wiki/enhancements-division>`_.  Default
     is False.
 
 ``cdivision_warnings`` (True / False)
     If set to True, Cython will emit a runtime warning whenever
     division is performed with negative operands.  See `CEP 516
-    <http://wiki.cython.org/enhancements/division>`_.  Default is
+    <https://github.com/cython/cython/wiki/enhancements-division>`_.  Default is
     False.
 
 ``always_allow_keywords`` (True / False)

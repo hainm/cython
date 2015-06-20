@@ -1339,7 +1339,17 @@ class FusedType(CType):
     exception_check = 0
 
     def __init__(self, types, name=None):
-        self.types = types
+        # Use list rather than set to preserve order (list should be short).
+        flattened_types = []
+        for t in types:
+            if t.is_fused:
+                # recursively merge in subtypes
+                for subtype in t.types:
+                    if subtype not in flattened_types:
+                        flattened_types.append(subtype)
+            elif t not in flattened_types:
+                flattened_types.append(t)
+        self.types = flattened_types
         self.name = name
 
     def declaration_code(self, entity_code, for_display = 0,
@@ -3577,6 +3587,7 @@ class CEnumType(CType):
         self.cname = cname
         self.values = []
         self.typedef_flag = typedef_flag
+        self.default_value = "(%s) 0" % self.empty_declaration_code()
 
     def __str__(self):
         return self.name

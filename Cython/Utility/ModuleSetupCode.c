@@ -184,20 +184,23 @@
   #define __Pyx_PyMethod_New(func, self, klass) PyMethod_New(func, self, klass)
 #endif
 
-/* inline attribute */
-#ifndef CYTHON_INLINE
-  #if defined(__GNUC__)
-    #define CYTHON_INLINE __inline__
-  #elif defined(_MSC_VER)
-    #define CYTHON_INLINE __inline
-  #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    #define CYTHON_INLINE inline
-  #else
-    #define CYTHON_INLINE
-  #endif
+// backport of PyAsyncMethods from Py3.5 to older Py3.x versions
+// (mis-)using the "tp_reserved" type slot which is re-activated as "tp_as_async" in Py3.5
+#if PY_VERSION_HEX >= 0x030500B1
+#define __Pyx_PyAsyncMethodsStruct PyAsyncMethods
+#define __Pyx_PyType_AsAsync(obj) (Py_TYPE(obj)->tp_as_async)
+#elif PY_MAJOR_VERSION >= 3
+typedef struct {
+    unaryfunc am_await;
+    unaryfunc am_aiter;
+    unaryfunc am_anext;
+} __Pyx_PyAsyncMethodsStruct;
+#define __Pyx_PyType_AsAsync(obj) ((__Pyx_PyAsyncMethodsStruct*) (Py_TYPE(obj)->tp_reserved))
+#else
+#define __Pyx_PyType_AsAsync(obj) NULL
 #endif
 
-/* restrict */
+// restrict
 #ifndef CYTHON_RESTRICT
   #if defined(__GNUC__)
     #define CYTHON_RESTRICT __restrict__
@@ -210,22 +213,32 @@
   #endif
 #endif
 
-#ifdef NAN
-#define __PYX_NAN() ((float) NAN)
-#else
-static CYTHON_INLINE float __PYX_NAN() {
-  /* Initialize NaN. The sign is irrelevant, an exponent with all bits 1 and
-   a nonzero mantissa means NaN. If the first bit in the mantissa is 1, it is
-   a quiet NaN. */
-  float value;
-  memset(&value, 0xFF, sizeof(value));
-  return value;
-}
-#endif
-
 #define __Pyx_void_to_None(void_result) (void_result, Py_INCREF(Py_None), Py_None)
 
-#ifdef __cplusplus
+
+/////////////// CInitCode ///////////////
+
+// inline attribute
+#ifndef CYTHON_INLINE
+  #if defined(__GNUC__)
+    #define CYTHON_INLINE __inline__
+  #elif defined(_MSC_VER)
+    #define CYTHON_INLINE __inline
+  #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+    #define CYTHON_INLINE inline
+  #else
+    #define CYTHON_INLINE
+  #endif
+#endif
+
+
+/////////////// CppInitCode ///////////////
+
+// inline attribute
+#ifndef CYTHON_INLINE
+  #define CYTHON_INLINE inline
+#endif
+
 // Work around clang bug http://stackoverflow.com/questions/21847816/c-invoke-nested-template-class-destructor
 template<typename T>
 void __Pyx_call_destructor(T* x) {
@@ -243,7 +256,28 @@ class __Pyx_FakeReference {
   private:
     T *ptr;
 };
+
+
+/////////////// MathInitCode ///////////////
+
+#if defined(WIN32) || defined(MS_WINDOWS)
+  #define _USE_MATH_DEFINES
 #endif
+#include <math.h>
+
+#ifdef NAN
+#define __PYX_NAN() ((float) NAN)
+#else
+static CYTHON_INLINE float __PYX_NAN() {
+  // Initialize NaN.  The sign is irrelevant, an exponent with all bits 1 and
+  // a nonzero mantissa means NaN.  If the first bit in the mantissa is 1, it is
+  // a quiet NaN.
+  float value;
+  memset(&value, 0xFF, sizeof(value));
+  return value;
+}
+#endif
+
 
 /////////////// UtilityFunctionPredeclarations.proto ///////////////
 
